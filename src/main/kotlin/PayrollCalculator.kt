@@ -1,3 +1,5 @@
+import java.text.ParseException
+import java.text.SimpleDateFormat
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -5,6 +7,18 @@ class PayrollCalculator(
     var payrollConfig: PayrollConfig = PayrollConfig(),
     var weeklyWorkRecord: WeeklyWorkRecord
 ){
+    fun isValidMilitaryTime(time: String): Boolean {
+        val format = SimpleDateFormat("HHmm")
+        format.isLenient = false
+
+        return try {
+            // Attempt to parse the time string
+            format.parse(time)
+            true
+        } catch (e: ParseException) {
+            false
+        }
+    }
     fun resetPayrollConfig() {
         payrollConfig = PayrollConfig()
     }
