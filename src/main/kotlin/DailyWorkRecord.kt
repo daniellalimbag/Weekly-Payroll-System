@@ -14,6 +14,7 @@ data class DailyWorkRecord(
         val nInTime = inTime.toInt()
         var nOutTime = outTime.toInt()
         isAbsent = nInTime == nOutTime
+        val workHours = payrollConfig.maxHours * 100 + 100
 
         //Check if "OUT" time is after midnight (e.g., "0000")
         if (nOutTime < nInTime) {
@@ -21,7 +22,7 @@ data class DailyWorkRecord(
         }
         //Check if the day is night shift
         isNightShift = nOutTime >= 2200
-        var isOvertime: Boolean = nOutTime > (nInTime + 900)
+        var isOvertime: Boolean = nOutTime > (nInTime + workHours)
 
         if (!isNightShift && !isOvertime) {
             nsHrs = 0
@@ -31,7 +32,7 @@ data class DailyWorkRecord(
         if (!isNightShift && isOvertime) {
             nsHrs = 0
             nsOvertimeHrs = 0
-            regOvertimeHrs = (nOutTime - (nInTime + 900)) / 100
+            regOvertimeHrs = (nOutTime - (nInTime + workHours)) / 100
         }
         if (isNightShift && !isOvertime) {
             regOvertimeHrs = 0
@@ -39,7 +40,7 @@ data class DailyWorkRecord(
             nsHrs = (nOutTime - 2200) / 100
         }
         if (isNightShift && isOvertime) {
-            regOvertimeHrs = (2200 - (nInTime + 900)) / 100
+            regOvertimeHrs = (2200 - (nInTime + workHours)) / 100
             nsHrs = 0 //fix thissssssssssssssssssssssssssssss
             nsOvertimeHrs = (nOutTime - 2200) / 100
         }
