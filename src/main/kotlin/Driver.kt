@@ -58,9 +58,8 @@ fun calculateTotalSalary(payrollCalculator: PayrollCalculator) {
     payrollCalculator.calculateTotalSalary()
     for (i in 1..7) {
         println("----------------------------------------------------")
-        print("[$i] ")
+        print("Day #$i ")
         addDailyWorkRecord(payrollCalculator)
-        println("----------------------------------------------------")
     }
     payrollCalculator.calculateTotalSalary()
 
@@ -75,7 +74,7 @@ fun calculateTotalSalary(payrollCalculator: PayrollCalculator) {
 }
 
 fun addDailyWorkRecord(payrollCalculator: PayrollCalculator) {
-    print("[Add Daily Work Record]")
+    print("Add Daily Work Record")
     print("\nEnter OUT time (HHmm): ")
     var outTime = scanner.next()
     if (!payrollCalculator.isValidMilitaryTime(outTime)) {
@@ -124,7 +123,8 @@ fun editConfigurations(payrollCalculator: PayrollCalculator) {
     println("[4] Default Day Type: ${payrollCalculator.payrollConfig.defDayType}")
     println("[5] Default In Time (HHmm): ${payrollCalculator.payrollConfig.defInTime}")
     println("[6] Default Out Time (HHmm): ${payrollCalculator.payrollConfig.defOutTime}")
-    println("[7] Exit to Main Menu")
+    println("[7] Reset")
+    println("[8] Exit to Main Menu")
 
     print("Enter the option number to edit (1-6): ")
     when (scanner.nextInt()) {
@@ -140,10 +140,10 @@ fun editConfigurations(payrollCalculator: PayrollCalculator) {
             while (!isValidInput) {
                 print("Enter new Maximum Regular Hours per Day): ")
                 newMaxHours = scanner.nextInt()
-                if (newMaxHours in 1..24) {
+                if (newMaxHours in 8..24) {
                     isValidInput = true
                 } else {
-                    println("Invalid input.")
+                    println("Invalid input. Input should be at least 8 hours.")
                 }
             }
             payrollCalculator.payrollConfig.maxHours = newMaxHours
@@ -206,7 +206,10 @@ fun editConfigurations(payrollCalculator: PayrollCalculator) {
             }
             println("Default Out Time updated successfully.")
         }
-        7 -> {
+        7->{
+            payrollCalculator.resetPayrollConfig()
+        }
+        8 -> {
             println("Returning to the Main Menu.")
             return
         }
@@ -277,37 +280,25 @@ fun displayRates() {
 
 fun printTable(header: List<String>, data: List<List<String>>) {
     val columnWidths = mutableListOf<Int>()
-
-    // Find maximum column widths
     for (i in header.indices) {
         val headerWidth = header[i].length
         val dataWidth = data.map { it[i].length }.maxOrNull() ?: 0
         columnWidths.add(maxOf(headerWidth, dataWidth))
     }
-
-    // Print top border
     print("+")
     for (width in columnWidths) {
         print("-".repeat(width + 2) + "+")
     }
     println()
-
-    // Print header
     printRowWithBorders(header, columnWidths)
-
-    // Print middle border
     print("+")
     for (width in columnWidths) {
         print("-".repeat(width + 2) + "+")
     }
     println()
-
-    // Print data rows
     for (row in data) {
         printRowWithBorders(row, columnWidths)
     }
-
-    // Print bottom border
     print("+")
     for (width in columnWidths) {
         print("-".repeat(width + 2) + "+")
