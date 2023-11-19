@@ -8,14 +8,22 @@ data class DailyWorkRecord(
     var nsOvertimeHrs: Int = 0,
     var salary: Float = 0.0F,
     var isNightShift: Boolean = false,
-    var isAbsent: Boolean
+    var isAbsent: Boolean,
+    var isRestDay: Boolean
 ) {
-    init {
+    init{
         val nInTime = inTime.toInt()
         var nOutTime = outTime.toInt()
         isAbsent = nInTime == nOutTime
         val workHours = payrollConfig.maxHours * 100 + 100
 
+        if (isRestDay) {
+            when (dayType) {
+                "Normal" -> dayType = "Rest Day"
+                "Regular Holiday" -> dayType = "Regular Holiday and Rest Day"
+                "Special Non-Working Day" -> dayType = "Special Non-Working Day and Rest Day"
+            }
+        }
         //Check if "OUT" time is after midnight (e.g., "0000")
         if (nOutTime < nInTime) {
             nOutTime += 2400
