@@ -1,5 +1,8 @@
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -8,14 +11,13 @@ class PayrollCalculator(
     var weeklyWorkRecord: WeeklyWorkRecord
 ){
     fun isValidMilitaryTime(time: String): Boolean {
-        val format = SimpleDateFormat("HHmm")
-        format.isLenient = false
+        val formatter = DateTimeFormatter.ofPattern("HHmm")
 
         return try {
             // Attempt to parse the time string
-            format.parse(time)
+            LocalTime.parse(time, formatter)
             true
-        } catch (e: ParseException) {
+        } catch (e: DateTimeParseException) {
             false
         }
     }
