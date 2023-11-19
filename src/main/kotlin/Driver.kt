@@ -1,6 +1,6 @@
 import java.util.*
 val scanner = Scanner(System.`in`)
-val days = listOf("Normal", "Rest Day", "Regular Holiday", "Special Non-Working Day", "Special Non-Working Day and Rest Day")
+val days = listOf("Normal", "Rest Day", "Regular Holiday", "Regular Holiday and Rest Day", "Special Non-Working Day", "Special Non-Working Day and Rest Day")
 
 fun main() {
     val payrollConfig = PayrollConfig(
@@ -14,6 +14,25 @@ fun main() {
     val weeklyWorkRecord = WeeklyWorkRecord()
     val payrollCalculator = PayrollCalculator(payrollConfig, weeklyWorkRecord)
     mainMenu(payrollCalculator)
+}
+
+fun initializeDailyRecords(payrollConfig: PayrollConfig, weeklyWorkRecord: WeeklyWorkRecord) {
+    for (i in 0 until 7) {
+        val dayType = if (i >= payrollConfig.workdays) "Rest Day" else payrollConfig.defDayType
+        weeklyWorkRecord.records.add(
+            DailyWorkRecord(
+                payrollConfig = payrollConfig,
+                inTime = payrollConfig.defInTime,
+                outTime = payrollConfig.defOutTime,
+                dayType = dayType,
+                regOvertimeHrs = 0,
+                nsHrs = 0,
+                salary = 0.0f,
+                isAbsent = false,
+                isRestDay = i >= payrollConfig.workdays
+            )
+        )
+    }
 }
 
 fun mainMenu(payrollCalculator: PayrollCalculator) {
@@ -50,19 +69,32 @@ fun calculateTotalSalary(payrollCalculator: PayrollCalculator) {
         listOf("Daily Salary", "${payrollCalculator.payrollConfig.dailyRate}"),
         listOf("Max Regular Hours", "${payrollCalculator.payrollConfig.maxHours}"),
         listOf("Workdays", "${payrollCalculator.payrollConfig.workdays}"),
-        listOf("Day Type", "${payrollCalculator.payrollConfig.defDayType}"),
-        listOf("IN Time", "${payrollCalculator.payrollConfig.defInTime}"),
-        listOf("OUT Time", "${payrollCalculator.payrollConfig.defOutTime}")
+        listOf("Day Type", payrollCalculator.payrollConfig.defDayType),
+        listOf("IN Time", payrollCalculator.payrollConfig.defInTime),
+        listOf("OUT Time", payrollCalculator.payrollConfig.defOutTime)
     )
     printTable(header, config)
-    payrollCalculator.calculateTotalSalary()
-    for (i in 1..7) {
-        println("----------------------------------------------------")
-        print("Day #$i ")
-        addDailyWorkRecord(payrollCalculator)
+
+    initializeDailyRecords(payrollCalculator.payrollConfig, payrollCalculator.weeklyWorkRecord)
+    while (true){
+        for (i in 1..7) {
+            println("-----------------------------------------------")
+            println("Day #$i")
+            println("OUT time: ${payrollCalculator.weeklyWorkRecord.records[i - 1].outTime}")
+            println("Day Type: ${payrollCalculator.weeklyWorkRecord.records[i - 1].dayType}")
+        }
+
+        println("-----------------------------------------------")
+        println("Enter a day to edit. Enter 0 to continue.")
+        var choice = scanner.nextInt()
+        if (choice != 0) {
+            editDailyWorkRecord(payrollCalculator, choice - 1)
+            payrollCalculator.weeklyWorkRecord.records[choice - 1].salary = 0.0f
+        }
+        else
+            break
     }
     payrollCalculator.calculateTotalSalary()
-
     var i = 1
     for (day in payrollCalculator.weeklyWorkRecord.records) {
         println("Day #$i Salary = ${day.salary}")
@@ -73,8 +105,7 @@ fun calculateTotalSalary(payrollCalculator: PayrollCalculator) {
     payrollCalculator.weeklyWorkRecord.records.clear()
 }
 
-fun addDailyWorkRecord(payrollCalculator: PayrollCalculator) {
-    print("Add Daily Work Record")
+fun editDailyWorkRecord(payrollCalculator: PayrollCalculator, n: Int) {
     print("\nEnter OUT time (HHmm): ")
     var outTime = scanner.next()
     if (!payrollCalculator.isValidMilitaryTime(outTime)) {
@@ -82,23 +113,26 @@ fun addDailyWorkRecord(payrollCalculator: PayrollCalculator) {
         outTime = payrollCalculator.payrollConfig.defOutTime
     }
 
+    val dayTypes = listOf("Normal", "Regular Holiday", "Special Non-Working Day")
     println("Enter day type")
-    for ((index, day) in days.withIndex()) {
-        println("[${index+1}] $day")
+    for ((index, day) in dayTypes.withIndex()) {
+        println("[${index + 1}] $day")
     }
     val input = scanner.nextInt() - 1
-    val selectedDayType = if (input in 0 until days.size) {
-        days[input]
+    var selectedDayType = if (input in 0 until dayTypes.size) {
+        dayTypes[input]
     } else {
-        if(payrollCalculator.weeklyWorkRecord.records.size == payrollCalculator.payrollConfig.workdays){
-            println("Invalid input. Using Rest Day as the default day type.")
-            days[1]
-        }
-        else {
-            println("Invalid input. Using ${payrollCalculator.payrollConfig.defDayType} as the default day type.")
-            payrollCalculator.payrollConfig.defDayType
+        println("Invalid input. Using the default day type.")
+        payrollCalculator.payrollConfig.defDayType
+    }
+    if (payrollCalculator.weeklyWorkRecord.records[n].isRestDay) {
+        when (input) {
+            0 -> selectedDayType = "Rest Day"
+            1 -> selectedDayType = "Regular Holiday and Rest Day"
+            2 -> selectedDayType = "Special Non-Working Day and Rest Day"
         }
     }
+
     val dailyWorkRecord = DailyWorkRecord(
         payrollConfig = payrollCalculator.payrollConfig,
         inTime = payrollCalculator.payrollConfig.defInTime,
@@ -107,11 +141,12 @@ fun addDailyWorkRecord(payrollCalculator: PayrollCalculator) {
         regOvertimeHrs = 0,
         nsHrs = 0,
         salary = 0.0f,
-        isAbsent = false
+        isAbsent = false,
+        isRestDay = selectedDayType.contains("Rest Day")
     )
-    payrollCalculator.weeklyWorkRecord.records.add(dailyWorkRecord)
-    println("Daily Work Record added successfully.")
+    payrollCalculator.weeklyWorkRecord.records[n] = dailyWorkRecord
 }
+
 
 fun editConfigurations(payrollCalculator: PayrollCalculator) {
     println("----------------------------------------------------")
@@ -248,7 +283,8 @@ fun calculateDailySalary(payrollCalculator: PayrollCalculator) {
         regOvertimeHrs = 0,
         nsHrs = 0,
         salary = 0.0f,
-        isAbsent = false
+        isAbsent = false,
+        isRestDay =  false
     )
 
     dailyWorkRecord.salary = payrollCalculator.calculateDailySalary(dailyWorkRecord)
