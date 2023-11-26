@@ -4,12 +4,12 @@ val days = listOf("Normal", "Rest Day", "Regular Holiday", "Regular Holiday and 
 
 fun main() {
     val payrollConfig = PayrollConfig(
-        dailyRate = 500.0f,
-        maxHours = 8,
-        workdays = 5,
-        defDayType = "Normal",
-        defInTime = "0900",
-        defOutTime = "0900"
+            dailyRate = 500.0f,
+            maxHours = 8,
+            workdays = 5,
+            defDayType = "Normal",
+            defInTime = "0900",
+            defOutTime = "0900"
     )
     val weeklyWorkRecord = WeeklyWorkRecord()
     val payrollCalculator = PayrollCalculator(payrollConfig, weeklyWorkRecord)
@@ -20,17 +20,17 @@ fun initializeDailyRecords(payrollConfig: PayrollConfig, weeklyWorkRecord: Weekl
     for (i in 0 until 7) {
         val dayType = if (i >= payrollConfig.workdays) "Rest Day" else payrollConfig.defDayType
         weeklyWorkRecord.records.add(
-            DailyWorkRecord(
-                payrollConfig = payrollConfig,
-                inTime = payrollConfig.defInTime,
-                outTime = payrollConfig.defOutTime,
-                dayType = dayType,
-                regOvertimeHrs = 0,
-                nsHrs = 0,
-                salary = 0.0f,
-                isAbsent = false,
-                isRestDay = i >= payrollConfig.workdays
-            )
+                DailyWorkRecord(
+                        payrollConfig = payrollConfig,
+                        inTime = payrollConfig.defInTime,
+                        outTime = payrollConfig.defOutTime,
+                        dayType = dayType,
+                        regOvertimeHrs = 0F,
+                        nsHrs = 0F,
+                        salary = 0.0f,
+                        isAbsent = false,
+                        isRestDay = i >= payrollConfig.workdays
+                )
         )
     }
 }
@@ -66,12 +66,12 @@ fun mainMenu(payrollCalculator: PayrollCalculator) {
 fun calculateTotalSalary(payrollCalculator: PayrollCalculator) {
     val header = listOf("Configurations", "Default")
     val config = listOf(
-        listOf("Daily Salary", "${payrollCalculator.payrollConfig.dailyRate}"),
-        listOf("Max Regular Hours", "${payrollCalculator.payrollConfig.maxHours}"),
-        listOf("Workdays", "${payrollCalculator.payrollConfig.workdays}"),
-        listOf("Day Type", payrollCalculator.payrollConfig.defDayType),
-        listOf("IN Time", payrollCalculator.payrollConfig.defInTime),
-        listOf("OUT Time", payrollCalculator.payrollConfig.defOutTime)
+            listOf("Daily Salary", "${payrollCalculator.payrollConfig.dailyRate}"),
+            listOf("Max Regular Hours", "${payrollCalculator.payrollConfig.maxHours}"),
+            listOf("Workdays", "${payrollCalculator.payrollConfig.workdays}"),
+            listOf("Day Type", payrollCalculator.payrollConfig.defDayType),
+            listOf("IN Time", payrollCalculator.payrollConfig.defInTime),
+            listOf("OUT Time", payrollCalculator.payrollConfig.defOutTime)
     )
     printTable(header, config)
 
@@ -101,7 +101,8 @@ fun calculateTotalSalary(payrollCalculator: PayrollCalculator) {
         i++
     }
 
-    println("Total Salary for the week: ${payrollCalculator.weeklyWorkRecord.totalSalary}")
+    val formattedValue = String.format("%.2f", payrollCalculator.weeklyWorkRecord.totalSalary)
+    println("Total Salary for the week: $formattedValue")
     payrollCalculator.weeklyWorkRecord.records.clear()
 }
 
@@ -134,15 +135,15 @@ fun editDailyWorkRecord(payrollCalculator: PayrollCalculator, n: Int) {
     }
 
     val dailyWorkRecord = DailyWorkRecord(
-        payrollConfig = payrollCalculator.payrollConfig,
-        inTime = payrollCalculator.payrollConfig.defInTime,
-        outTime = outTime,
-        dayType = selectedDayType,
-        regOvertimeHrs = 0,
-        nsHrs = 0,
-        salary = 0.0f,
-        isAbsent = false,
-        isRestDay = selectedDayType.contains("Rest Day")
+            payrollConfig = payrollCalculator.payrollConfig,
+            inTime = payrollCalculator.payrollConfig.defInTime,
+            outTime = outTime,
+            dayType = selectedDayType,
+            regOvertimeHrs = 0F,
+            nsHrs = 0F,
+            salary = 0.0f,
+            isAbsent = false,
+            isRestDay = selectedDayType.contains("Rest Day")
     )
     payrollCalculator.weeklyWorkRecord.records[n] = dailyWorkRecord
 }
@@ -276,38 +277,39 @@ fun calculateDailySalary(payrollCalculator: PayrollCalculator) {
     }
 
     val dailyWorkRecord = DailyWorkRecord(
-        payrollConfig = payrollCalculator.payrollConfig,
-        inTime = payrollCalculator.payrollConfig.defInTime,
-        outTime = outTime,
-        dayType = selectedDayType,
-        regOvertimeHrs = 0,
-        nsHrs = 0,
-        salary = 0.0f,
-        isAbsent = false,
-        isRestDay =  false
+            payrollConfig = payrollCalculator.payrollConfig,
+            inTime = payrollCalculator.payrollConfig.defInTime,
+            outTime = outTime,
+            dayType = selectedDayType,
+            regOvertimeHrs = 0F,
+            nsHrs = 0F,
+            salary = 0.0f,
+            isAbsent = false,
+            isRestDay =  false
     )
 
     dailyWorkRecord.salary = payrollCalculator.calculateDailySalary(dailyWorkRecord)
-    println("Daily Salary: ${dailyWorkRecord.salary}")
+    val formattedValue = String.format("%.2f", dailyWorkRecord.salary)
+    println("Daily Salary: $formattedValue")
 }
 fun displayRates() {
     val header1 = listOf("Day", "Rate")
     val premiumRates = listOf(
-        listOf("Rest Day", "130%"),
-        listOf("Special Non-Working Day", "130%"),
-        listOf("Special Non-Working Day and Rest Day", "150%"),
-        listOf("Regular Holiday", "200%"),
-        listOf("Regular Holiday and Rest Day", "260%")
+            listOf("Rest Day", "130%"),
+            listOf("Special Non-Working Day", "130%"),
+            listOf("Special Non-Working Day and Rest Day", "150%"),
+            listOf("Regular Holiday", "200%"),
+            listOf("Regular Holiday and Rest Day", "260%")
     )
 
     val header2 = listOf("Day", "Non-Night Shift", "Night Shift")
     val overtimeRates = listOf(
-        listOf("Normal Day", "125%", "137.5%"),
-        listOf("Rest Day", "169%", "185.9%"),
-        listOf("Special Non-Working Day", "169%", "185.9%"),
-        listOf("Special Non-Working Day and Rest Day", "195%", "214.5%"),
-        listOf("Regular Holiday", "260%", "286.0%"),
-        listOf("Regular Holiday and Rest Day", "338%", "371.8%")
+            listOf("Normal Day", "125%", "137.5%"),
+            listOf("Rest Day", "169%", "185.9%"),
+            listOf("Special Non-Working Day", "169%", "185.9%"),
+            listOf("Special Non-Working Day and Rest Day", "195%", "214.5%"),
+            listOf("Regular Holiday", "260%", "286.0%"),
+            listOf("Regular Holiday and Rest Day", "338%", "371.8%")
     )
 
     printTable(header1, premiumRates)
