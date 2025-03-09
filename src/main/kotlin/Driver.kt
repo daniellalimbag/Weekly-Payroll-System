@@ -74,10 +74,8 @@ fun calculateTotalSalary(payrollCalculator: PayrollCalculator) {
     )
     printTable(header, config)
 
-    // Initialize records using the Factory
     initializeDailyRecords(payrollCalculator.payrollConfig, payrollCalculator.weeklyWorkRecord)
 
-    // Allow user to edit daily records
     while (true) {
         payrollCalculator.weeklyWorkRecord.records.forEachIndexed { index, record ->
             println("-----------------------------------------------")
