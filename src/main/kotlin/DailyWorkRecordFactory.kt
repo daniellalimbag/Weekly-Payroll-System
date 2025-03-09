@@ -7,7 +7,7 @@ object DailyWorkRecordFactory {
             .build()
     }
 
-    // Creates a rest day record (default no work)
+    // Creates a rest day record
     fun createRestDayRecord(payrollConfig: PayrollConfig): DailyWorkRecord {
         return DailyWorkRecordBuilder(payrollConfig)
             .setDayType("Rest Day")
@@ -46,31 +46,6 @@ object DailyWorkRecordFactory {
         return DailyWorkRecordBuilder(payrollConfig)
             .setDayType("Regular Holiday and Rest Day")
             .setIsRestDay(true)
-            .calculateShiftData()
-            .build()
-    }
-
-    // Creates an overtime record for a given day type
-    fun createOvertimeRecord(
-        payrollConfig: PayrollConfig,
-        dayType: String,
-        regOvertimeHrs: Float,
-        nsHrs: Float,
-        nsOvertimeHrs: Float
-    ): DailyWorkRecord {
-        return DailyWorkRecordBuilder(payrollConfig)
-            .setDayType(dayType)
-            .setOvertime(regOvertimeHrs, nsHrs, nsOvertimeHrs)
-            .calculateShiftData()
-            .build()
-    }
-
-    // Creates an absent day record
-    fun createAbsentRecord(payrollConfig: PayrollConfig, dayType: String): DailyWorkRecord {
-        return DailyWorkRecordBuilder(payrollConfig)
-            .setDayType(dayType)
-            .setInTime(payrollConfig.defInTime)
-            .setOutTime(payrollConfig.defInTime)
             .calculateShiftData()
             .build()
     }

@@ -116,29 +116,20 @@ fun editDailyWorkRecord(payrollCalculator: PayrollCalculator, n: Int) {
     days.forEachIndexed { index, day -> println("[${index + 1}] $day") }
 
     val input = scanner.nextInt() - 1
-    val selectedDayType = if (input in days.indices) {
-        days[input]
-    } else {
-        println("Invalid input. Using the default day type.")
-        payrollCalculator.payrollConfig.defDayType
+    val updatedRecord = when (input) {
+        0 -> DailyWorkRecordFactory.createNormalRecord(payrollCalculator.payrollConfig)
+        1 -> DailyWorkRecordFactory.createRestDayRecord(payrollCalculator.payrollConfig)
+        2 -> DailyWorkRecordFactory.createRegularHolidayRecord(payrollCalculator.payrollConfig)
+        3 -> DailyWorkRecordFactory.createRegularHolidayRestDayRecord(payrollCalculator.payrollConfig)
+        4 -> DailyWorkRecordFactory.createSpecialNonWorkingDayRecord(payrollCalculator.payrollConfig)
+        5 -> DailyWorkRecordFactory.createSpecialNonWorkingRestDayRecord(payrollCalculator.payrollConfig)
+        else -> {
+            println("Invalid input. No changes made.")
+            return
+        }
+    }.also {
+        it.outTime = outTime
     }
-
-    val isRestDay = payrollCalculator.weeklyWorkRecord.records[n].isRestDay
-    val adjustedDayType = when {
-        isRestDay && input == 1 -> "Regular Holiday and Rest Day"
-        isRestDay && input == 2 -> "Special Non-Working Day and Rest Day"
-        isRestDay -> "Rest Day"
-        else -> selectedDayType
-    }
-
-    // Update the record using the Builder
-    val updatedRecord = DailyWorkRecordBuilder(payrollCalculator.payrollConfig)
-        .setInTime(payrollCalculator.payrollConfig.defInTime)
-        .setOutTime(outTime)
-        .setDayType(adjustedDayType)
-        .setIsRestDay(adjustedDayType.contains("Rest Day"))
-        .calculateShiftData()
-        .build()
 
     payrollCalculator.weeklyWorkRecord.records[n] = updatedRecord
     println("Day #${n + 1} updated successfully.")
