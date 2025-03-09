@@ -7,7 +7,6 @@ class PayrollCalculator(
     val weeklyWorkRecord: WeeklyWorkRecord
 ) {
     companion object {
-        // Pay rates for different day types
         private val payRates = mapOf(
             "Normal" to 1.0f,
             "Rest Day" to 1.3f,
@@ -17,7 +16,6 @@ class PayrollCalculator(
             "Regular Holiday and Rest Day" to 2.6f
         )
 
-        // Overtime rates for different day types
         private val overtimeRates = mapOf(
             "Normal" to 1.25f,
             "Rest Day" to 1.69f,
@@ -26,7 +24,6 @@ class PayrollCalculator(
             "Regular Holiday" to 2.6f
         )
 
-        // Night shift rates for different day types
         private val nightShiftRates = mapOf(
             "Normal" to 1.375f,
             "Rest Day" to 1.859f,
