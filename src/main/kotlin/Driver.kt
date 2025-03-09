@@ -1,37 +1,39 @@
 import java.util.*
+
 val scanner = Scanner(System.`in`)
-val days = listOf("Normal", "Rest Day", "Regular Holiday", "Regular Holiday and Rest Day", "Special Non-Working Day", "Special Non-Working Day and Rest Day")
+val days = listOf(
+    "Normal",
+    "Rest Day",
+    "Regular Holiday",
+    "Regular Holiday and Rest Day",
+    "Special Non-Working Day",
+    "Special Non-Working Day and Rest Day"
+)
 
 fun main() {
-    val payrollConfig = PayrollConfig(
-        dailyRate = 500.0f,
-        maxHours = 8,
-        workdays = 5,
-        defDayType = "Normal",
-        defInTime = "0900",
-        defOutTime = "0900"
-    )
+    val payrollConfig = PayrollConfig.Builder()
+        .dailyRate(500.0f)
+        .maxHours(8)
+        .workdays(5)
+        .defDayType("Normal")
+        .defInTime("0900")
+        .defOutTime("0900")
+        .build()
+
     val weeklyWorkRecord = WeeklyWorkRecord()
     val payrollCalculator = PayrollCalculator(payrollConfig, weeklyWorkRecord)
     mainMenu(payrollCalculator)
 }
 
 fun initializeDailyRecords(payrollConfig: PayrollConfig, weeklyWorkRecord: WeeklyWorkRecord) {
+    weeklyWorkRecord.records.clear()
     for (i in 0 until 7) {
-        val dayType = if (i >= payrollConfig.workdays) "Rest Day" else payrollConfig.defDayType
-        weeklyWorkRecord.records.add(
-            DailyWorkRecord(
-                payrollConfig = payrollConfig,
-                inTime = payrollConfig.defInTime,
-                outTime = payrollConfig.defOutTime,
-                dayType = dayType,
-                regOvertimeHrs = 0F,
-                nsHrs = 0F,
-                salary = 0.0f,
-                isAbsent = false,
-                isRestDay = i >= payrollConfig.workdays
-            )
-        )
+        val record = if (i >= payrollConfig.workdays) {
+            DailyWorkRecordFactory.createRestDayRecord(payrollConfig)
+        } else {
+            DailyWorkRecordFactory.createNormalRecord(payrollConfig)
+        }
+        weeklyWorkRecord.records.add(record)
     }
 }
 
@@ -55,10 +57,7 @@ fun mainMenu(payrollCalculator: PayrollCalculator) {
                 println("Exiting the Payroll System.")
                 return
             }
-            else ->{
-                println("Invalid choice. Please select a valid option.")
-                println("----------------------------------------------------")
-            }
+            else -> println("Invalid choice. Please select a valid option.")
         }
     }
 }
@@ -75,36 +74,34 @@ fun calculateTotalSalary(payrollCalculator: PayrollCalculator) {
     )
     printTable(header, config)
 
+    // Initialize records using the Factory
     initializeDailyRecords(payrollCalculator.payrollConfig, payrollCalculator.weeklyWorkRecord)
-    while (true){
-        for (i in 1..7) {
+
+    // Allow user to edit daily records
+    while (true) {
+        payrollCalculator.weeklyWorkRecord.records.forEachIndexed { index, record ->
             println("-----------------------------------------------")
-            println("Day #$i")
-            println("OUT time: ${payrollCalculator.weeklyWorkRecord.records[i - 1].outTime}")
-            println("Day Type: ${payrollCalculator.weeklyWorkRecord.records[i - 1].dayType}")
+            println("Day #${index + 1}")
+            println("OUT time: ${record.outTime}")
+            println("Day Type: ${record.dayType}")
         }
 
         println("-----------------------------------------------")
         println("Enter a day to edit. Enter 0 to continue.")
-        var choice = scanner.nextInt()
+        val choice = scanner.nextInt()
         if (choice != 0) {
             editDailyWorkRecord(payrollCalculator, choice - 1)
-            payrollCalculator.weeklyWorkRecord.records[choice - 1].salary = 0.0f
-        }
-        else
-            break
-    }
-    payrollCalculator.calculateTotalSalary()
-    var i = 1
-    for (day in payrollCalculator.weeklyWorkRecord.records) {
-        val formattedValue = String.format("%.2f", day.salary)
-        println("Day #$i Salary = $formattedValue")
-        i++
+        } else break
     }
 
-    val formattedValue = String.format("%.2f", payrollCalculator.weeklyWorkRecord.totalSalary)
-    println("Total Salary for the week: $formattedValue")
-    payrollCalculator.weeklyWorkRecord.records.clear()
+    payrollCalculator.calculateTotalSalary()
+    payrollCalculator.weeklyWorkRecord.records.forEachIndexed { index, record ->
+        val formattedValue = String.format("%.2f", record.salary)
+        println("Day #${index + 1} Salary = $formattedValue")
+    }
+
+    val totalFormattedValue = String.format("%.2f", payrollCalculator.weeklyWorkRecord.totalSalary)
+    println("Total Salary for the week: $totalFormattedValue")
 }
 
 fun editDailyWorkRecord(payrollCalculator: PayrollCalculator, n: Int) {
@@ -115,40 +112,37 @@ fun editDailyWorkRecord(payrollCalculator: PayrollCalculator, n: Int) {
         outTime = payrollCalculator.payrollConfig.defOutTime
     }
 
-    val dayTypes = listOf("Normal", "Regular Holiday", "Special Non-Working Day")
-    println("Enter day type")
-    for ((index, day) in dayTypes.withIndex()) {
-        println("[${index + 1}] $day")
-    }
+    println("Enter day type:")
+    days.forEachIndexed { index, day -> println("[${index + 1}] $day") }
+
     val input = scanner.nextInt() - 1
-    var selectedDayType = if (input in 0 until dayTypes.size) {
-        dayTypes[input]
+    val selectedDayType = if (input in days.indices) {
+        days[input]
     } else {
         println("Invalid input. Using the default day type.")
         payrollCalculator.payrollConfig.defDayType
     }
-    if (payrollCalculator.weeklyWorkRecord.records[n].isRestDay) {
-        when (input) {
-            0 -> selectedDayType = "Rest Day"
-            1 -> selectedDayType = "Regular Holiday and Rest Day"
-            2 -> selectedDayType = "Special Non-Working Day and Rest Day"
-        }
+
+    val isRestDay = payrollCalculator.weeklyWorkRecord.records[n].isRestDay
+    val adjustedDayType = when {
+        isRestDay && input == 1 -> "Regular Holiday and Rest Day"
+        isRestDay && input == 2 -> "Special Non-Working Day and Rest Day"
+        isRestDay -> "Rest Day"
+        else -> selectedDayType
     }
 
-    val dailyWorkRecord = DailyWorkRecord(
-        payrollConfig = payrollCalculator.payrollConfig,
-        inTime = payrollCalculator.payrollConfig.defInTime,
-        outTime = outTime,
-        dayType = selectedDayType,
-        regOvertimeHrs = 0F,
-        nsHrs = 0F,
-        salary = 0.0f,
-        isAbsent = false,
-        isRestDay = selectedDayType.contains("Rest Day")
-    )
-    payrollCalculator.weeklyWorkRecord.records[n] = dailyWorkRecord
-}
+    // Update the record using the Builder
+    val updatedRecord = DailyWorkRecordBuilder(payrollCalculator.payrollConfig)
+        .setInTime(payrollCalculator.payrollConfig.defInTime)
+        .setOutTime(outTime)
+        .setDayType(adjustedDayType)
+        .setIsRestDay(adjustedDayType.contains("Rest Day"))
+        .calculateShiftData()
+        .build()
 
+    payrollCalculator.weeklyWorkRecord.records[n] = updatedRecord
+    println("Day #${n + 1} updated successfully.")
+}
 
 fun editConfigurations(payrollCalculator: PayrollCalculator) {
     println("----------------------------------------------------")
@@ -160,139 +154,119 @@ fun editConfigurations(payrollCalculator: PayrollCalculator) {
     println("[4] Default Day Type: ${payrollCalculator.payrollConfig.defDayType}")
     println("[5] Default In Time (HHmm): ${payrollCalculator.payrollConfig.defInTime}")
     println("[6] Default Out Time (HHmm): ${payrollCalculator.payrollConfig.defOutTime}")
-    println("[7] Reset")
+    println("[7] Reset to Default Configurations")
     println("[8] Exit to Main Menu")
 
-    print("Enter the option number to edit (1-6): ")
+    print("Enter the option number to edit: ")
+    val builder = PayrollConfig.Builder()
+        .dailyRate(payrollCalculator.payrollConfig.dailyRate)
+        .maxHours(payrollCalculator.payrollConfig.maxHours)
+        .workdays(payrollCalculator.payrollConfig.workdays)
+        .defDayType(payrollCalculator.payrollConfig.defDayType)
+        .defInTime(payrollCalculator.payrollConfig.defInTime)
+        .defOutTime(payrollCalculator.payrollConfig.defOutTime)
+
     when (scanner.nextInt()) {
         1 -> {
             print("Enter new Daily Rate: ")
             val newDailyRate = scanner.nextFloat()
-            payrollCalculator.payrollConfig.dailyRate = newDailyRate
+            payrollCalculator.payrollConfig = builder.dailyRate(newDailyRate).build()
             println("Daily Rate updated successfully.")
         }
         2 -> {
-            var isValidInput = false
-            var newMaxHours = 0
-            while (!isValidInput) {
-                print("Enter new Maximum Regular Hours per Day): ")
-                newMaxHours = scanner.nextInt()
-                if (newMaxHours in 8..24) {
-                    isValidInput = true
-                } else {
-                    println("Invalid input. Input should be at least 8 hours.")
-                }
-            }
-            payrollCalculator.payrollConfig.maxHours = newMaxHours
+            print("Enter new Maximum Regular Hours per Day (8-24): ")
+            val newMaxHours = scanner.nextInt().coerceIn(8, 24) // Validating input
+            payrollCalculator.payrollConfig = builder.maxHours(newMaxHours).build()
             println("Maximum Regular Hours per Day updated successfully.")
         }
         3 -> {
-            var valid = false
-            var newWorkdays = 0
-            while (!valid) {
-                print("Enter new Workdays per Week: ")
-                newWorkdays = scanner.nextInt()
-                if (newWorkdays in 1..7) {
-                    valid = true
-                } else {
-                    println("Invalid input.")
-                }
-            }
-            payrollCalculator.payrollConfig.workdays = newWorkdays
+            print("Enter new Workdays per Week (1-7): ")
+            val newWorkdays = scanner.nextInt().coerceIn(1, 7) // Validating input
+            payrollCalculator.payrollConfig = builder.workdays(newWorkdays).build()
             println("Workdays per Week updated successfully.")
         }
         4 -> {
-            print("Enter new Default Day Type: \n")
-            var isValid = false
-            var selectedDayType = ""
-            while (!isValid) {
-                for ((index, day) in days.withIndex()) {
-                    println("[${index + 1}] $day")
-                }
-                val input = scanner.nextInt() - 1
-
-                if (input in 0 until days.size) {
-                    selectedDayType = days[input]
-                    isValid = true
-                } else {
-                    println("Invalid input. Please enter a valid option.")
-                }
+            println("Select new Default Day Type:")
+            days.forEachIndexed { index, day -> println("[${index + 1}] $day") }
+            val input = scanner.nextInt() - 1
+            if (input in days.indices) {
+                payrollCalculator.payrollConfig = builder.defDayType(days[input]).build()
+                println("Default Day Type updated successfully.")
+            } else {
+                println("Invalid input. No changes made.")
             }
-            payrollCalculator.payrollConfig.defDayType = selectedDayType
-            println("Default Day Type updated successfully.")
         }
         5 -> {
             print("Enter new Default In Time (HHmm): ")
             var newInTime = scanner.next()
-            payrollCalculator.payrollConfig.defInTime = newInTime
             while (!payrollCalculator.isValidMilitaryTime(newInTime)) {
                 println("Invalid time format. Please enter a valid military time (HHmm).")
                 print("Enter new Default In Time (HHmm): ")
                 newInTime = scanner.next()
             }
+            payrollCalculator.payrollConfig = builder.defInTime(newInTime).build()
             println("Default In Time updated successfully.")
         }
         6 -> {
             print("Enter new Default Out Time (HHmm): ")
             var newOutTime = scanner.next()
-            payrollCalculator.payrollConfig.defOutTime = newOutTime
             while (!payrollCalculator.isValidMilitaryTime(newOutTime)) {
                 println("Invalid time format. Please enter a valid military time (HHmm).")
                 print("Enter new Default Out Time (HHmm): ")
                 newOutTime = scanner.next()
             }
+            payrollCalculator.payrollConfig = builder.defOutTime(newOutTime).build()
             println("Default Out Time updated successfully.")
         }
-        7->{
+        7 -> {
             payrollCalculator.resetPayrollConfig()
+            println("Configurations reset to default values.")
         }
         8 -> {
             println("Returning to the Main Menu.")
             return
         }
-        else -> {
-            println("Invalid option. Please enter a valid option.")
-        }
+        else -> println("Invalid option. Please enter a valid option.")
     }
 }
 
-
 fun calculateDailySalary(payrollCalculator: PayrollCalculator) {
     println("[Calculate Daily Salary]")
+
     print("Enter OUT time (HHmm): ")
     var outTime = scanner.next()
     if (!payrollCalculator.isValidMilitaryTime(outTime)) {
         println("Invalid input. Using ${payrollCalculator.payrollConfig.defOutTime} as the default OUT time.")
         outTime = payrollCalculator.payrollConfig.defOutTime
     }
-    println("Enter day type")
-    for ((index, day) in days.withIndex()) {
-        println("[${index+1}] $day")
-    }
+
+    println("Enter day type:")
+    days.forEachIndexed { index, day -> println("[${index + 1}] $day") }
+
     val input = scanner.nextInt() - 1
-    val selectedDayType = if (input in 0 until days.size) {
+    val selectedDayType = if (input in days.indices) {
         days[input]
     } else {
-        println("Invalid input. Using ${payrollCalculator.payrollConfig.defDayType} as the default day type.")
+        println("Invalid input. Using the default day type.")
         payrollCalculator.payrollConfig.defDayType
     }
 
-    val dailyWorkRecord = DailyWorkRecord(
-        payrollConfig = payrollCalculator.payrollConfig,
-        inTime = payrollCalculator.payrollConfig.defInTime,
-        outTime = outTime,
-        dayType = selectedDayType,
-        regOvertimeHrs = 0F,
-        nsHrs = 0F,
-        salary = 0.0f,
-        isAbsent = false,
-        isRestDay =  false
-    )
+    // Build a daily work record
+    val dailyWorkRecord = DailyWorkRecordBuilder(payrollCalculator.payrollConfig)
+        .setInTime(payrollCalculator.payrollConfig.defInTime)
+        .setOutTime(outTime)
+        .setDayType(selectedDayType)
+        .setIsRestDay(selectedDayType.contains("Rest Day"))
+        .calculateShiftData()
+        .build()
 
+    // Calculate salary
     dailyWorkRecord.salary = payrollCalculator.calculateDailySalary(dailyWorkRecord)
     val formattedValue = String.format("%.2f", dailyWorkRecord.salary)
     println("Daily Salary: $formattedValue")
 }
+
+
 fun displayRates() {
     val header1 = listOf("Day", "Rate")
     val premiumRates = listOf(
